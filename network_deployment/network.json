@@ -10,6 +10,10 @@
 			"Description": "Just select one of the available subnets",
 			"Type": "AWS::EC2::Subnet::Id"
 		},
+		"SubnetTwo": {
+			"Description": "Just select one of the available subnets",
+			"Type": "AWS::EC2::Subnet::Id"
+		},
 		"InstanceType": {
 			"Description": "Select one of the possible instance types",
 			"Type": "String",
@@ -35,6 +39,26 @@
 					"IpProtocol": "tcp",
 					"ToPort": 8000
 				}]
+			}
+		},
+		"DBSecurityGroup": {
+			"Type": "AWS::RDS::DBSecurityGroup",
+			"Properties": {
+				"EC2VpcId" : { "Ref": "VPC" },
+				"DBSecurityGroupIngress" : [ {
+					"EC2SecurityGroupId": {"Ref": "ApplicationSecurityGroup"}
+				}],
+				"GroupDescription" : "Allow access from App Servers"
+			}
+		}, 
+		"DBSubnetGroup": {
+			"Type": "AWS::RDS::DBSubnetGroup",
+			"Properties": {
+				"DBSubnetGroupDescription": "Database subnet group",
+				"SubnetIds" : [ 
+					{"Ref": "Subnet"},
+					{"Ref": "SubnetTwo"}
+				]
 			}
 		}
 	},
