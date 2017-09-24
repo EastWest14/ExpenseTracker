@@ -18,8 +18,7 @@ aws cloudformation create-stack --stack-name ET-Network \
 --template-body file://network.json \
 --parameters ParameterKey=VPC,ParameterValue=$VpcID \
 ParameterKey=Subnet,ParameterValue=$SubnetID \
-ParameterKey=SubnetTwo,ParameterValue=$SubnetTwoID \
-ParameterKey=InstanceType,ParameterValue=t2.micro
+ParameterKey=SubnetTwo,ParameterValue=$SubnetTwoID
 
 echo 'Stack creation in progress'
 aws cloudformation wait stack-create-complete --stack-name ET-Network

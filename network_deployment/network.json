@@ -13,12 +13,6 @@
 		"SubnetTwo": {
 			"Description": "Just select one of the available subnets",
 			"Type": "AWS::EC2::Subnet::Id"
-		},
-		"InstanceType": {
-			"Description": "Select one of the possible instance types",
-			"Type": "String",
-			"Default": "t2.micro",
-			"AllowedValues": ["t2.micro", "t2.small", "t2.medium"]
 		}
 	},
 	"Resources": {
@@ -63,9 +57,25 @@
 		}
 	},
 	"Outputs": {
-		"0": {
+		"ApplicationSecurityGroup": {
 			"Value": {"Ref": "ApplicationSecurityGroup"},
 			"Description": "Application Security Group"
+		},
+		"DatabaseSecurityGroup": {
+			"Value": {"Ref": "DBSecurityGroup"},
+			"Description": "Database Security Group"
+		},
+		"DatabaseSubnetGroup": {
+			"Value": {"Ref": "DBSubnetGroup"},
+			"Description": "Database Subnet Group"
+		},
+		"SubnetOne": {
+			"Value": {"Ref": "Subnet"},
+			"Description": "First subnet"
+		},
+		"SubnetTwo": {
+			"Value": {"Ref": "SubnetTwo"},
+			"Description": "Second subnet"
 		}
 	}
 }
