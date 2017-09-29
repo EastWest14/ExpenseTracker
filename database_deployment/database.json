@@ -6,6 +6,10 @@
 			"Description": "Just select the one and only default VPC",
 			"Type": "AWS::EC2::VPC::Id"
 		},
+		"Subnet": {
+			"Description": "Just select one of the available subnets",
+			"Type": "AWS::EC2::Subnet::Id"
+		},
 		"DatabaseSubnetGroup": {
 			"Description": "DB subnet group",
 			"Type": "String"
@@ -13,6 +17,32 @@
 		"DatabaseSecurityGroup": {
 			"Description": "DB security group",
 			"Type": "String"
+		},
+		"ApplicationSecurityGroup": {
+			"Description": "Application server security group",
+			"Type": "AWS::EC2::SecurityGroup::Id"
+		},
+		"InstanceType": {
+			"Description": "Select one of the possible instance types",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": ["t2.micro", "t2.small", "t2.medium"]
+		},
+		"DBUser": {
+			"Description": "Database user",
+			"Type": "String",
+			"Default": "temptemp",
+			"NoEcho": true
+		},
+		"DBPassword": {
+			"Description": "Database password",
+			"Type": "String",
+			"Default": "temptemp",
+			"NoEcho": true
+		},
+		"KeyName": {
+			"Description": "Key Pair name",
+			"Type": "AWS::EC2::KeyPair::KeyName"
 		}
 	},
 	"Resources": {
@@ -29,12 +59,124 @@
 				"DBName": "expense_db",
 				"DBSecurityGroups": [ {"Ref": "DatabaseSecurityGroup"} ],
 				"DBSubnetGroupName" : {"Ref": "DatabaseSubnetGroup"},
-				"Engine" : "mysql",
-				"MasterUsername" : "temp",
-				"MasterUserPassword" : "temptemp",
-				"MultiAZ" : false,
+				"Engine": "mysql",
+				"MasterUsername": {"Ref": "DBUser"},
+				"MasterUserPassword": {"Ref": "DBPassword"},
+				"MultiAZ": false,
 				"Port" : 3306,
 				"StorageEncrypted" : false
+			}
+		},
+		"ServerProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+      			"Roles": [ { "Ref": "ServerRole" } ]
+   			}
+		},
+		"ServerRole": {
+    		"Type": "AWS::IAM::Role",
+    		"Properties": {
+            	"AssumeRolePolicyDocument": {
+               		"Version" : "2012-10-17",
+            		"Statement": [ {
+                  		"Effect": "Allow",
+						"Principal": {
+                     		"Service": [ "ec2.amazonaws.com" ]
+                  		},
+                 		"Action": [ "sts:AssumeRole" ]
+               		}]
+            	},
+            	"Path": "/",
+            	"Policies": [ {
+            		"PolicyName": "root",
+            		"PolicyDocument": {
+                		"Version" : "2012-10-17",
+                		"Statement": [ {
+							"Action": [
+                				"s3:Get*",
+                				"s3:List*"
+				            ],
+                    		"Effect": "Allow",
+                    		"Resource": "*"
+                		}]
+               		}
+            	}]
+        	}
+    	},
+    	"Server": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": "ami-4fffc834",
+				"InstanceType": {"Ref": "InstanceType"},
+				"KeyName": {"Ref": "KeyName"},
+				"SecurityGroupIds": [{"Ref": "ApplicationSecurityGroup"}],
+				"SubnetId": {"Ref": "Subnet"},
+				"IamInstanceProfile": { "Ref": "ServerProfile" },
+				"Tags": [{
+					"Key": "Application",
+					"Value": "DBDeploy"
+				}],
+				"UserData":
+					{"Fn::Base64": {"Fn::Join": ["", [
+						"#!/bin/bash -ex\n",
+						"sudo yum -y --security update\n",
+						"sudo yum -y install mysql\n",
+						"sudo yum install ruby wget -y\n",
+						"cd /home/ec2-user\n",
+						"wget https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install\n",
+						"chmod +x ./install\n",
+						"sudo ./install auto\n",
+						"echo 'export DBHost=", { "Fn::GetAtt" : [ "Database", "Endpoint.Address" ] }, "' > db_var.sh\n",
+						"echo 'export DBUser=", {"Ref": "DBUser"}, "' >> db_var.sh\n",
+						"echo 'export DBPasswd=", {"Ref": "DBPassword"}, "' >> db_var.sh\n"
+					]]}}
+			}
+		},
+		"CodeDeployRole": {
+    		"Type": "AWS::IAM::Role",
+    		"Properties": {
+            	"AssumeRolePolicyDocument": {
+               		"Version" : "2012-10-17",
+            		"Statement": [ {
+                  		"Effect": "Allow",
+						"Principal": {
+                     		"Service": [ "codedeploy.amazonaws.com" ]
+                  		},
+                 		"Action": [ "sts:AssumeRole" ]
+               		}]
+            	},
+            	"Path": "/",
+            	"Policies": [ {
+            		"PolicyName": "root",
+            		"PolicyDocument": {
+                		"Version" : "2012-10-17",
+                		"Statement": [ {
+                    		"Effect": "Allow",
+                    		"Action": "*",
+                    		"Resource": "*"
+                		}]
+               		}
+            	}]
+        	}
+    	},
+    	"S3Bucket": {
+			"Type": "AWS::S3::Bucket"
+		},
+    	"DBDeploy": {
+			"Type": "AWS::CodeDeploy::Application",
+			"Properties": {
+				"ApplicationName": "DBDeploy"
+			}
+		},
+    	"DeploymentGroup": {
+			"Type": "AWS::CodeDeploy::DeploymentGroup",
+			"Properties": {
+				"ApplicationName": { "Ref": "DBDeploy" },
+				"DeploymentGroupName": "DBGroup",
+				"Ec2TagFilters": [
+					{"Key": "Application", "Type": "KEY_AND_VALUE", "Value": "DBDeploy"}
+				],
+				"ServiceRoleArn": { "Fn::GetAtt" : [ "CodeDeployRole", "Arn" ] }
 			}
 		}
 	},
@@ -42,6 +184,10 @@
 		"Database": {
 			"Value": {"Ref": "Database"},
 			"Description": "Expense Tracker Relational DB"
+		},
+		"DBDeployBucket": {
+			"Value": {"Ref": "S3Bucket"},
+			"Description": "S3 bucket for deploying DB data"
 		}
 	}
 }

@@ -1,0 +1,9 @@
+version: 0.0
+os: linux
+files:
+  - source: db_data.sql
+    destination: /home/ec2-user
+hooks:
+  AfterInstall:
+    - location: database_deploy.sh
+      timeout: 5
