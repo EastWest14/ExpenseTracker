@@ -7,7 +7,7 @@ echo 'Loading VPC ID:'
 VpcID=$(aws ec2 describe-vpcs --query Vpcs[0].VpcId --output text)
 echo $VpcID
 echo 'Loading Subnet ID:'
-SubnetID=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VpcID --query Subnets[0].SubnetId --output text)
+SubnetID=$(aws cloudformation describe-stacks --stack-name ET-Network --query 'Stacks[0].Outputs[?OutputKey==`SubnetOne`].OutputValue' --output text)
 echo $SubnetID
 echo 'Loading DB subnet group:'
 DBSubnetGroup=$(../strip_quotes.sh $(aws cloudformation describe-stacks --stack-name ET-Network --query 'Stacks[0].Outputs[?OutputKey==`DatabaseSubnetGroup`].OutputValue' --output text))
@@ -18,11 +18,7 @@ echo $DBSecurityGroup
 echo 'Loading Application security group:'
 ApplicationSecurityGroup=$(../strip_quotes.sh $(aws cloudformation describe-stacks --stack-name ET-Network --query 'Stacks[0].Outputs[?OutputKey==`ApplicationSecurityGroup`].OutputValue' --output text))
 echo $ApplicationSecurityGroup
-KeyName=ET
 echo "AWS Key name: $KeyName"
-
-DBUser='temp'
-DBPassword='temptemptemp'
 
 aws cloudformation create-stack --stack-name ET-Database \
 --capabilities CAPABILITY_IAM \

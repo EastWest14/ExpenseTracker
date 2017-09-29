@@ -10,14 +10,6 @@
 			"Description": "Select one of the available subnets",
 			"Type": "AWS::EC2::Subnet::Id"
 		},
-		"DatabaseSubnetGroup": {
-			"Description": "DB subnet group",
-			"Type": "String"
-		},
-		"DatabaseSecurityGroup": {
-			"Description": "DB security group",
-			"Type": "String"
-		},
 		"ApplicationSecurityGroup": {
 			"Description": "Application server security group",
 			"Type": "AWS::EC2::SecurityGroup::Id"
@@ -27,18 +19,6 @@
 			"Type": "String",
 			"Default": "t2.micro",
 			"AllowedValues": ["t2.micro", "t2.small", "t2.medium"]
-		},
-		"DBUser": {
-			"Description": "Database user",
-			"Type": "String",
-			"Default": "temptemp",
-			"NoEcho": true
-		},
-		"DBPassword": {
-			"Description": "Database password",
-			"Type": "String",
-			"Default": "temptemp",
-			"NoEcho": true
 		},
 		"KeyName": {
 			"Description": "Key Pair name",
