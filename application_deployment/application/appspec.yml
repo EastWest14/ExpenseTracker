@@ -1,9 +1,9 @@
 version: 0.0
 os: linux
 files:
-  - source: main.txt
+  - source: main
     destination: /home/ec2-user
 hooks:
-  AfterInstall:
+  ApplicationStart:
     - location: server_launch.sh
       timeout: 5
