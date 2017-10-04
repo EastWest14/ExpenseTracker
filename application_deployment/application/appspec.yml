@@ -1,0 +1,9 @@
+version: 0.0
+os: linux
+files:
+  - source: main.txt
+    destination: /home/ec2-user
+hooks:
+  AfterInstall:
+    - location: server_launch.sh
+      timeout: 5

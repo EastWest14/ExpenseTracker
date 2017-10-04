@@ -20,31 +20,119 @@
 			"Default": "t2.micro",
 			"AllowedValues": ["t2.micro", "t2.small", "t2.medium"]
 		},
+		"DBHost": {
+			"Description": "Database host, with no port",
+			"Type": "String",
+			"Default": "temptemp",
+			"NoEcho": true
+		},
+		"DBUser": {
+			"Description": "Database user",
+			"Type": "String",
+			"Default": "temptemp",
+			"NoEcho": true
+		},
+		"DBPassword": {
+			"Description": "Database password",
+			"Type": "String",
+			"Default": "temptemp",
+			"NoEcho": true
+		},
 		"KeyName": {
 			"Description": "Key Pair name",
 			"Type": "AWS::EC2::KeyPair::KeyName"
 		}
 	},
 	"Resources": {
-		"Database": {
-			"Type": "AWS::RDS::DBInstance",
+		"LBListener": {
+			"Type": "AWS::ElasticLoadBalancingV2::Listener",
 			"Properties": {
-				"AllocatedStorage": "5",
-				"AllowMajorVersionUpgrade": false,
-				"AutoMinorVersionUpgrade": true,
-				"BackupRetentionPeriod": "7",
-				"CopyTagsToSnapshot": true,
-				"DBInstanceClass": "db.t2.micro",
-				"DBInstanceIdentifier": "expensedb",
-				"DBName": "expense_db",
-				"DBSecurityGroups": [ {"Ref": "DatabaseSecurityGroup"} ],
-				"DBSubnetGroupName" : {"Ref": "DatabaseSubnetGroup"},
-				"Engine": "mysql",
-				"MasterUsername": {"Ref": "DBUser"},
-				"MasterUserPassword": {"Ref": "DBPassword"},
-				"MultiAZ": false,
-				"Port" : 3306,
-				"StorageEncrypted" : false
+				"DefaultActions": [ {
+					"TargetGroupArn": { "Ref": "LBTargetGroup" },
+					"Type": "forward"
+				}],
+				"LoadBalancerArn": { "Ref": "LoadBalancer" },
+				"Port": 80,
+				"Protocol": "TCP"
+			}
+		},
+		"LBTargetGroup": {
+			"Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Properties" : {
+				"Name": "AppTargetGroup",
+				"HealthCheckIntervalSeconds" : 10,
+				"UnhealthyThresholdCount" : 2,
+				"HealthyThresholdCount": 2,
+				"Port" : 8080,
+				"Protocol" : "TCP",
+				"VpcId" : {"Ref": "VPC"}
+			}
+		},
+		"LoadBalancer": {
+			"Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+			"Properties": {
+				"Scheme": "internet-facing",
+				"Subnets": [ {"Ref": "Subnet"} ],
+				"Type": "network",
+				"IpAddressType": "ipv4"
+			}
+		},
+		"ASLaunchConfig": {
+			"Type": "AWS::AutoScaling::LaunchConfiguration",
+			"Properties": {
+				"AssociatePublicIpAddress": true,
+				"EbsOptimized": false,
+				"IamInstanceProfile": { "Ref": "ServerProfile" },
+				"ImageId": "ami-4fffc834",
+				"InstanceMonitoring": false,
+				"InstanceType": {"Ref": "InstanceType"},
+				"KeyName": {"Ref": "KeyName"},
+				"SecurityGroups": [{"Ref": "ApplicationSecurityGroup"}],
+				"UserData" : 
+					{"Fn::Base64": {"Fn::Join": ["", [
+						"#!/bin/bash -ex\n",
+						"sudo yum -y --security update\n",
+						"sudo yum install ruby wget -y\n",
+						"cd /home/ec2-user\n",
+						"wget https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install\n",
+						"chmod +x ./install\n",
+						"sudo ./install auto\n",
+						"echo 'ok' > index.html\n",
+						"sudo python -m SimpleHTTPServer 8080 &\n",
+						"sudo yum -y install mysql\n",
+						"echo 'export DBHost=", {"Ref": "DBHost"}, "' > set_env.sh\n",
+						"echo 'export DBUser=", {"Ref": "DBUser"}, "' >> set_env.sh\n",
+						"echo 'export DBPassword=", {"Ref": "DBPassword"}, "' >> set_env.sh\n",
+						"chmod +x set_env.sh\n"
+					]]}}
+			}
+		},
+		"AutoScalingGroup": {
+   			"Type" : "AWS::AutoScaling::AutoScalingGroup",
+   			"Properties" : {
+				"Cooldown" : "10",
+				"DesiredCapacity": "1",
+				"HealthCheckGracePeriod" : 60,
+				"HealthCheckType" : "ELB",
+				"LaunchConfigurationName": {"Ref": "ASLaunchConfig"},
+				"MaxSize" : "3",
+				"MinSize" : "0",
+				"Tags": [{
+					"Key": "Application",
+					"Value": "ETApp",
+					"PropagateAtLaunch" : true
+				}],
+				"TargetGroupARNs": [{ "Ref": "LBTargetGroup" }],
+				"VPCZoneIdentifier" : [ {"Ref": "Subnet"} ]
+			}
+		},
+		"S3Bucket": {
+			"Type": "AWS::S3::Bucket"
+		},
+    	"DeploymentApplication": {
+			"Type": "AWS::CodeDeploy::Application",
+			"Properties": {
+				"ApplicationName": "ETAppDeploy"
 			}
 		},
 		"ServerProfile": {
@@ -83,35 +171,6 @@
             	}]
         	}
     	},
-    	"Server": {
-			"Type": "AWS::EC2::Instance",
-			"Properties": {
-				"ImageId": "ami-4fffc834",
-				"InstanceType": {"Ref": "InstanceType"},
-				"KeyName": {"Ref": "KeyName"},
-				"SecurityGroupIds": [{"Ref": "ApplicationSecurityGroup"}],
-				"SubnetId": {"Ref": "Subnet"},
-				"IamInstanceProfile": { "Ref": "ServerProfile" },
-				"Tags": [{
-					"Key": "Application",
-					"Value": "DBDeploy"
-				}],
-				"UserData":
-					{"Fn::Base64": {"Fn::Join": ["", [
-						"#!/bin/bash -ex\n",
-						"sudo yum -y --security update\n",
-						"sudo yum -y install mysql\n",
-						"sudo yum install ruby wget -y\n",
-						"cd /home/ec2-user\n",
-						"wget https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install\n",
-						"chmod +x ./install\n",
-						"sudo ./install auto\n",
-						"echo 'export DBHost=", { "Fn::GetAtt" : [ "Database", "Endpoint.Address" ] }, "' > db_var.sh\n",
-						"echo 'export DBUser=", {"Ref": "DBUser"}, "' >> db_var.sh\n",
-						"echo 'export DBPasswd=", {"Ref": "DBPassword"}, "' >> db_var.sh\n"
-					]]}}
-			}
-		},
 		"CodeDeployRole": {
     		"Type": "AWS::IAM::Role",
     		"Properties": {
@@ -138,36 +197,32 @@
                		}
             	}]
         	}
-    	},
-    	"S3Bucket": {
-			"Type": "AWS::S3::Bucket"
-		},
-    	"DBDeploy": {
-			"Type": "AWS::CodeDeploy::Application",
-			"Properties": {
-				"ApplicationName": "DBDeploy"
-			}
-		},
-    	"DeploymentGroup": {
-			"Type": "AWS::CodeDeploy::DeploymentGroup",
-			"Properties": {
-				"ApplicationName": { "Ref": "DBDeploy" },
-				"DeploymentGroupName": "DBGroup",
-				"Ec2TagFilters": [
-					{"Key": "Application", "Type": "KEY_AND_VALUE", "Value": "DBDeploy"}
-				],
-				"ServiceRoleArn": { "Fn::GetAtt" : [ "CodeDeployRole", "Arn" ] }
-			}
-		}
+    	}
 	},
 	"Outputs": {
-		"Database": {
-			"Value": {"Ref": "Database"},
-			"Description": "Expense Tracker Relational DB"
-		},
-		"DBDeployBucket": {
+		"AppDeployBucket": {
 			"Value": {"Ref": "S3Bucket"},
-			"Description": "S3 bucket for deploying DB data"
+			"Description": "S3 bucket for deploying the application"
+		},
+		"LoadBalancerDNSName": {
+			"Value": {"Fn::GetAtt": ["LoadBalancer", "DNSName"]},
+			"Description": "Public DNS name of Load Balancer"
+		},
+		"AutoScalingGroup": {
+			"Value": { "Ref": "AutoScalingGroup" },
+			"Description": "Name of Auto Scaling Group"
+		},
+		"CodeDeployRole": {
+			"Value": {"Fn::GetAtt": ["CodeDeployRole", "Arn"] },
+			"Description": "CodeDeployRole ARN"
+		},
+		"LoadBalancerName": {
+			"Value": {"Fn::GetAtt": ["LoadBalancer", "LoadBalancerName"]},
+			"Description": "Name of Load Balancer"
+		},
+		"TargetGroupName": {
+			"Value": {"Fn::GetAtt": ["LBTargetGroup", "TargetGroupFullName"]},
+			"Description": "Name of Target Group"
 		}
 	}
 }

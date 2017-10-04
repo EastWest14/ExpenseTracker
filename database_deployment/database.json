@@ -185,6 +185,10 @@
 			"Value": {"Ref": "Database"},
 			"Description": "Expense Tracker Relational DB"
 		},
+		"DatabaseHost": {
+			"Value": { "Fn::GetAtt" : [ "Database", "Endpoint.Address" ] },
+			"Description": "DB Host address, port excluded"
+		},
 		"DBDeployBucket": {
 			"Value": {"Ref": "S3Bucket"},
 			"Description": "S3 bucket for deploying DB data"
