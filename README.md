@@ -11,19 +11,19 @@ Prerequisites:
 
 Launch instructions:
 1. Launch network infrastructure.
-`cd network_deployment
+`cd network_deployment;
 ./launch_network.sh`
 2. Launch database.
-cd database_deployment
-./launch_database
-./deploy
+`cd database_deployment;
+./launch_database;
+./deploy`
 3. Launch application.
-cd application_deployment
-./launch_infrastructure.sh
-./deploy.sh
+`cd application_deployment;
+./launch_infrastructure.sh;
+./deploy.sh`
 
 To deploy new application, run:
-cd application_deployment
-./deploy.sh
+`cd application_deployment;
+./deploy.sh`
 
 This will re-build and re-deploy application through Blue-Green deployment on AWS.
