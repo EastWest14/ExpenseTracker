@@ -1,5 +1,5 @@
 # ExpenseTracker
-*WIP*
+**WIP**
 An AWS hosted web application for accumulating and analysing expenses.
 
 Prerequisites:
