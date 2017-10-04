@@ -11,8 +11,8 @@ Prerequisites:
 
 Launch instructions:
 1. Launch network infrastructure.
-cd network_deployment
-./launch_network.sh
+`cd network_deployment
+./launch_network.sh`
 2. Launch database.
 cd database_deployment
 ./launch_database
