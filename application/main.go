@@ -1,10 +1,8 @@
 package main
 
 import (
-	"database/sql"
+	"ExpenseTracker/application/database"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	//"ExpenseTracker/application/database"
 	"net/http"
 	"os"
 )
@@ -12,6 +10,8 @@ import (
 const (
 	DB_NAME = "ET_DB"
 )
+
+var petName string
 
 func main() {
 	setup()
@@ -24,18 +24,19 @@ func setup() {
 	dbPassword := os.Getenv("DBPassword")
 	dbHost := os.Getenv("DBHost")
 	fmt.Println(dbUser + ":" + dbPassword + ":" + dbHost)
-	db, err := sql.Open("mysql", dbUser+":"+dbPassword+"@tcp("+dbHost+":3306)/"+DB_NAME)
-	err = db.Ping()
+	db, err := database.CreateDBConnection(dbHost, dbUser, dbPassword, DB_NAME)
 	if err != nil {
-		panic(err.Error())
+		panic("Failed to connect to DB: " + err.Error())
 	}
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Connected to DB")
 	defer db.Close()
+	fmt.Println("Connected to DB")
+	name, err := database.QueryPetName(db)
+	if err != nil {
+		panic("Failed to get pet name: " + err.Error())
+	}
+	petName = name
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there!")
+	fmt.Fprintf(w, petName)
 }
