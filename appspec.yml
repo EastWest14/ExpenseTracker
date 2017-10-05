@@ -1,0 +1,9 @@
+version: 0.0
+os: linux
+files:
+  - source: application/main
+    destination: /home/ec2-user
+hooks:
+  ApplicationStart:
+    - location: application_deployment/server_launch.sh
+      timeout: 5

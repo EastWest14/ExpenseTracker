@@ -1,9 +1,0 @@
-version: 0.0
-os: linux
-files:
-  - source: main
-    destination: /home/ec2-user
-hooks:
-  ApplicationStart:
-    - location: server_launch.sh
-      timeout: 5
