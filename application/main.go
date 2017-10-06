@@ -4,7 +4,6 @@ import (
 	"ExpenseTracker/application/database"
 	"ExpenseTracker/application/server"
 	"fmt"
-	"net/http"
 	"os"
 )
 
@@ -15,12 +14,11 @@ const (
 var petName string
 
 func main() {
+	setupDB()
 	setup()
-	/*router := mux.NewRouter()
-	router.HandleFunc("/", defaultHandler)
-	router.HandleFunc("/poems", otherHandler)
-	http.Handle("/", router)
-	http.ListenAndServe(":8080", nil)*/
+}
+
+func setup() {
 	serv := server.NewServer()
 	err := serv.Start()
 	if err != nil {
@@ -28,7 +26,7 @@ func main() {
 	}
 }
 
-func setup() {
+func setupDB() {
 	dbUser := os.Getenv("DBUser")
 	dbPassword := os.Getenv("DBPassword")
 	dbHost := os.Getenv("DBHost")
@@ -45,10 +43,3 @@ func setup() {
 	petName = name
 }
 
-func defaultHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, petName)
-}
-
-func otherHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "---")
-}
