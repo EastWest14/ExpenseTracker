@@ -2,10 +2,10 @@ package main
 
 import (
 	"ExpenseTracker/application/database"
+	"ExpenseTracker/application/server"
 	"fmt"
 	"net/http"
 	"os"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -16,11 +16,16 @@ var petName string
 
 func main() {
 	setup()
-	router := mux.NewRouter()
+	/*router := mux.NewRouter()
 	router.HandleFunc("/", defaultHandler)
 	router.HandleFunc("/poems", otherHandler)
 	http.Handle("/", router)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", nil)*/
+	serv := server.NewServer()
+	err := serv.Start()
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func setup() {
