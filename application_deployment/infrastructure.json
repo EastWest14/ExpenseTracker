@@ -100,6 +100,8 @@
 						"echo 'ok' > index.html\n",
 						"sudo python -m SimpleHTTPServer 8080 &\n",
 						"sudo yum -y install mysql\n",
+						"sudo yum install -y awslogs\n",
+						"sudo service awslogs start\n",
 						"echo 'export DBHost=", {"Ref": "DBHost"}, "' > set_env.sh\n",
 						"echo 'export DBUser=", {"Ref": "DBUser"}, "' >> set_env.sh\n",
 						"echo 'export DBPassword=", {"Ref": "DBPassword"}, "' >> set_env.sh\n",
@@ -168,6 +170,24 @@
                     		"Resource": "*"
                 		}]
                		}
+            	},
+            	{
+            		"PolicyName": "root2",
+            		"PolicyDocument": {
+						"Version": "2012-10-17",
+						"Statement": [ {
+							"Effect": "Allow",
+							"Action": [
+								"logs:CreateLogGroup",
+								"logs:CreateLogStream",
+								"logs:PutLogEvents",
+								"logs:DescribeLogStreams"
+							],
+							"Resource": [
+								"arn:aws:logs:*:*:*"
+							]
+						}]
+					}
             	}]
         	}
     	},
