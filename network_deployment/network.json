@@ -54,6 +54,16 @@
 					{"Ref": "SubnetTwo"}
 				]
 			}
+		},
+		"AlarmTopic": {
+			"Type" : "AWS::SNS::Topic",
+			"Properties" : {
+				"DisplayName" : "AlarmTopic",
+				"Subscription" : [ {
+					"Endpoint" : "aprosikhin@gmail.com",
+					"Protocol" : "email"
+				}]
+			}
 		}
 	},
 	"Outputs": {
@@ -76,6 +86,10 @@
 		"SubnetTwo": {
 			"Value": {"Ref": "SubnetTwo"},
 			"Description": "Second subnet"
+		},
+		"AlarmTopic": {
+			"Value": {"Ref": "AlarmTopic"},
+			"Description": "Alarm Topic for sending alerts"
 		}
 	}
 }

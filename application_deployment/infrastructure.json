@@ -225,7 +225,14 @@
                		}
             	}]
         	}
-    	}
+    	},
+    	"ServiceDashboard": {
+			"Type": "AWS::CloudWatch::Dashboard",
+			"Properties" : {
+				"DashboardName": "ETD",
+				"DashboardBody": "{\"widgets\": [{\"type\": \"text\",\"x\": 0,\"y\": 7,\"width\":3,\"height\":3,\"properties\":{\"markdown\":\"Hello world\"}}]}"
+			}
+		}
 	},
 	"Outputs": {
 		"AppDeployBucket": {

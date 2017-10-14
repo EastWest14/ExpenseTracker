@@ -40,6 +40,9 @@ func setupDB() {
 	if err != nil {
 		panic("Failed to get pet name: " + err.Error())
 	}
+	_, err = database.QueryUser(db, int64(1))
+	if err != nil {
+		panic("Failed to get user: " + err.Error())
+	}
 	petName = name
 }
-
