@@ -1,2 +1,3 @@
 *.pem
 set_env_var.sh
+set_local_env.sh

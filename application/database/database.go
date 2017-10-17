@@ -1,8 +1,8 @@
 package database
 
 import (
+	"ExpenseTracker/application/domain/datatypes"
 	"database/sql"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -41,25 +41,28 @@ func QueryPetName(dbConnection *sql.DB) (string, error) {
 	return name, nil
 }
 
-func QueryUser(dbConnection *sql.DB, id int64) (string, error) {
+func QueryUser(dbConnection *sql.DB, id int64) (*datatypes.User, error) {
+	aUser := datatypes.NewUser()
 	var firstName, lastName string
 	var tempId int64
 
 	rows, err := dbConnection.Query("select id, first_name, last_name from user where id = ?", id)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&tempId, &firstName, &lastName)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		fmt.Printf("ID: %d, FN: %s, LN: %s", tempId, firstName, lastName)
+		aUser.SetID(tempId)
+		aUser.SetFirstName(firstName)
+		aUser.SetLastName(lastName)
 	}
 	err = rows.Err()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return "", nil
+	return aUser, nil
 }

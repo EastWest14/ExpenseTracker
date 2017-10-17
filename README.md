@@ -22,7 +22,7 @@ Launch instructions:
 ./launch_infrastructure.sh;
 ./deploy.sh`
 
-To deploy new application, run:
+To deploy application, run:
 `cd application_deployment;
 ./deploy.sh`
 
